@@ -65,9 +65,51 @@ struct QuadrupedConfig {
 
   std::vector<Leg> legs;
 
+  //Added new structure
+  struct Leg_onemove {
+    int id = 1;
+    int time_s = 5;
+    base::Point3D pose_foot = {0.25, 0.205, 0.030};
+    base::Point3D pose_R = {0.200, 0.160, 0.23};
+    base::Point3D com_shift = {-0.1,-0.03,0};
+    bool friendly_gesture = true;
+    template <typename Archive>
+    void Serialize(Archive* a) {
+      a->Visit(MJ_NVP(id));
+      a->Visit(MJ_NVP(time_s));
+      a->Visit(MJ_NVP(com_shift));
+      a->Visit(MJ_NVP(pose_foot));
+      a->Visit(MJ_NVP(pose_R));
+      a->Visit(MJ_NVP(friendly_gesture));
+    }
+  };
+
+  Leg_onemove leg_onemove;
+
+    //Added new structure
+  struct Pee_behavior {
+    int id = 3;
+    int time_s = 5;
+    base::Point3D pose_foot = {-0.18, 0.305, 0.080};
+    base::Point3D pose_R = {0.180, 0.205, 0.050};
+    base::Point3D com_shift = {0.08, -0.03, 0};
+    bool friendly_gesture = false;
+    template <typename Archive>
+    void Serialize(Archive* a) {
+      a->Visit(MJ_NVP(id));
+      a->Visit(MJ_NVP(time_s));
+      a->Visit(MJ_NVP(com_shift));
+      a->Visit(MJ_NVP(pose_foot));
+      a->Visit(MJ_NVP(pose_R));
+      a->Visit(MJ_NVP(friendly_gesture));
+    }
+  };
+  Pee_behavior pee_behavior;
+  ////////until here
+  
   struct Bounds {
     double min_z_B = 0.0;
-    double max_z_B = 0.30;
+    double max_z_B = 0.3;
     double max_acceleration = 100;
 
     template <typename Archive>
@@ -88,7 +130,7 @@ struct QuadrupedConfig {
     // This pose is referenced to the leg in the front right and the
     // x/y positions should all be positive.  All other positions will
     // be symmetric about the x/y axes.
-    base::Point3D pose_R = {0.151, 0.240, 0.049};
+    base::Point3D pose_R = {0.151, 0.219, 0.049};
     double velocity_dps = 60.0;
     double velocity = 0.150;
     double shoulder_clearance_deg = 52.0;
@@ -141,8 +183,6 @@ struct QuadrupedConfig {
   double terrain_filter_s = 0.5;
   double voltage_filter_s = 1.0;
 
-  double zero_velocity_kd_scale = 1.5;
-
   struct Jump {
     double lower_velocity = 0.100;
     double retract_velocity = 1.000;
@@ -153,7 +193,7 @@ struct QuadrupedConfig {
     double land_kp = 1.0;
     double land_kd = 0.1;
     double lower_height = 0.100;
-    double upper_height = 0.220;
+    double upper_height = 0.240; //original upper_height = 0.22
     double retract_height = 0.190;
     double landing_force_scale = 1.0;
     double land_gain_increase = 100.0;
@@ -234,8 +274,6 @@ struct QuadrupedConfig {
 
     double jump_velocity_scale = 0.5;
 
-    double center_exclude = 0.05;
-
     template <typename Archive>
     void Serialize(Archive* a) {
       a->Visit(MJ_NVP(lift_height));
@@ -266,7 +304,6 @@ struct QuadrupedConfig {
       a->Visit(MJ_NVP(extra_target_time_s));
       a->Visit(MJ_NVP(jump_offset_scale));
       a->Visit(MJ_NVP(jump_velocity_scale));
-      a->Visit(MJ_NVP(center_exclude));
     }
   };
 
@@ -305,6 +342,8 @@ struct QuadrupedConfig {
     a->Visit(MJ_NVP(joints));
     a->Visit(MJ_NVP(rezero_threshold_deg));
     a->Visit(MJ_NVP(legs));
+    a->Visit(MJ_NVP(leg_onemove));
+    a->Visit(MJ_NVP(pee_behavior));
     a->Visit(MJ_NVP(bounds));
     a->Visit(MJ_NVP(mass_kg));
     a->Visit(MJ_NVP(leg_mass_kg));
@@ -320,8 +359,6 @@ struct QuadrupedConfig {
     a->Visit(MJ_NVP(lr_acceleration));
     a->Visit(MJ_NVP(lr_alpha_rad_s2));
     a->Visit(MJ_NVP(terrain_filter_s));
-    a->Visit(MJ_NVP(voltage_filter_s));
-    a->Visit(MJ_NVP(zero_velocity_kd_scale));
     a->Visit(MJ_NVP(jump));
     a->Visit(MJ_NVP(walk));
     a->Visit(MJ_NVP(backflip));

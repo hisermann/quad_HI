@@ -1,0 +1,16 @@
+{
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#400A79",
+        "titleBar.activeBackground": "#5A0EAA",
+        "titleBar.activeForeground": "#FDFCFF"
+    },
+    "files.associations": {
+        "*.ipp": "cpp",
+        "__split_buffer": "cpp",
+        "deque": "cpp",
+        "list": "cpp",
+        "string": "cpp",
+        "vector": "cpp",
+        "rope": "cpp"
+    }
+}

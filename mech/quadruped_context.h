@@ -121,27 +121,11 @@ struct QuadrupedContext : boost::noncopyable {
     // assume B == R .... this doesn't matter too much, we just need
     // to give a point "somewhere" in the valid G region.
     Sophus::SE3d tf_BR;
-    const double forward = 10.0;  // 10m is big enough, right?
-    const std::vector<Eigen::Vector3d> exclude_region_B = {
-      { forward, -config.walk.center_exclude, 0 },
-      { forward, config.walk.center_exclude, 0 },
-      { -forward, config.walk.center_exclude, 0 },
-      { -forward, -config.walk.center_exclude, 0 },
-      { forward, -config.walk.center_exclude, 0 },
-    };
     for (size_t i = 0; i < legs.size(); i++) {
-      ValidLegRegion::Polygon exclude_region_G;
-      for (const auto& p_B : exclude_region_B) {
-        const Eigen::Vector3d p_G = legs[i].pose_BG.inverse() * p_B;
-        ValidLegRegion::Point p{p_G.x(), p_G.y()};
-        boost::geometry::append(exclude_region_G, p);
-      }
-
       valid_regions.emplace_back(
           legs[i].ik,
           legs[i].pose_BG.inverse() * tf_BR * legs[i].idle_R,
-          config.walk.lift_height,
-          exclude_region_G);
+          config.walk.lift_height);
     }
   }
 
@@ -180,6 +164,7 @@ struct QuadrupedContext : boost::noncopyable {
 
     const Sophus::SE3d tf_MB = robot.frame_MB.pose;
     Sophus::SE3d tf_MT = tf_AM.inverse() * robot.tf_TA.inverse();
+    const Sophus::SE3d tf_BM = tf_MB.inverse();
 
     const Eigen::Vector3d com_on_ground_M =
         FindVerticalLinePlaneIntersect(
@@ -191,7 +176,7 @@ struct QuadrupedContext : boost::noncopyable {
     // Project that back into the B frame to get our offset.
     base::KinematicRelation result_RB;
     result_RB.pose.translation().head<2>() =
-        -(com_on_ground_M - (tf_MT * Eigen::Vector3d(0, 0, 0))).head<2>();
+        -(tf_BM * com_on_ground_M).head<2>();
 
     return result_RB;
   }

@@ -26,14 +26,14 @@ const getElement = (v) => document.getElementById(v);
 const iota = (v) => Array.from((new Array(v)).keys());
 
 const PERSIST_ELEMENTS = [
-  "jump_acceleration",
-  "max_forward_speed",
-  "height_scale",
-  "jump_repeat",
-  "always_step",
-  "disable_strafe",
-  "maximize_flight",
-  "record_data",
+  // "jump_acceleration",
+  // "max_forward_speed",
+  // "height_scale",
+  // "jump_repeat",
+  // "always_step",
+  // "disable_strafe",
+  // "maximize_flight",
+  // "record_data",
 ];
 
 function _isUndefined(v) {
@@ -210,17 +210,18 @@ class Application {
         }
       }
     }
+    //////////////////////For removing graph in between
 
     // Fill in our constant values.
-    document.getElementById('chart_rot_min').innerHTML =
-      (-180.0 * CMD_MAX_RATE_Z / Math.PI).toFixed(0);
-    document.getElementById('chart_rot_max').innerHTML =
-      (180.0 * CMD_MAX_RATE_Z / Math.PI).toFixed(0);
+    // document.getElementById('chart_rot_min').innerHTML =
+    //   (-180.0 * CMD_MAX_RATE_Z / Math.PI).toFixed(0);
+    // document.getElementById('chart_rot_max').innerHTML =
+    //   (180.0 * CMD_MAX_RATE_Z / Math.PI).toFixed(0);
 
-    getElement('chart_x_min').innerHTML = this.getMaxReverseSpeed().toFixed(2);
-    getElement('chart_x_max').innerHTML = this.getMaxForwardSpeed().toFixed(2);
-    getElement('chart_y_min').innerHTML = (-CMD_MAX_RATE_Y).toFixed(2);
-    getElement('chart_y_max').innerHTML = CMD_MAX_RATE_Y.toFixed(2);
+    // getElement('chart_x_min').innerHTML = this.getMaxReverseSpeed().toFixed(2);
+    // getElement('chart_x_max').innerHTML = this.getMaxForwardSpeed().toFixed(2);
+    // getElement('chart_y_min').innerHTML = (-CMD_MAX_RATE_Y).toFixed(2);
+    // getElement('chart_y_max').innerHTML = CMD_MAX_RATE_Y.toFixed(2);
 
     const checkbox = getElement('mode_expander');
     getElement('text').addEventListener('click', () => {
@@ -262,8 +263,9 @@ class Application {
   }
 
   _updateConfig() {
-    getElement('chart_x_max').innerHTML = this.getMaxForwardSpeed().toFixed(2);
-    getElement('chart_x_min').innerHTML = this.getMaxReverseSpeed().toFixed(2);
+        //////////////////////For removing graph in between
+    // getElement('chart_x_max').innerHTML = this.getMaxForwardSpeed().toFixed(2);
+    // getElement('chart_x_min').innerHTML = this.getMaxReverseSpeed().toFixed(2);
 
     // Save our state in the cookies.
     for (const key of PERSIST_ELEMENTS) {
@@ -277,29 +279,31 @@ class Application {
   }
 
   getMaxForwardSpeed() {
-    if (this._mode == "pronk") {
-      return 0.3;
-    } else {
-      return Number(getElement('max_forward_speed').value);
-    }
+    // if (this._mode == "pronk") {
+    //   return 0.3;
+    // } else {
+    //   return Number(getElement('max_forward_speed').value);
+    // }
   }
 
   getMaxReverseSpeed() {
-    if (this._mode == "pronk") {
-      return -0.1;
-    } else {
-      return -0.5;
-    }
+    // if (this._mode == "pronk") {
+    //   return -0.1;
+    // } else {
+    //   return -0.5;
+    // }
   }
 
   getJumpAcceleration() {
-    return Number(getElement('jump_acceleration').value);
+    // return Number(getElement('jump_acceleration').value);
   }
 
   start() {
     setInterval(() => this._handleTimer(), 100);
     this._openWebsocket();
-    getElement("command_plot").focus();
+
+        //////////////////////For removing graph in between
+    // getElement("command_plot").focus();
   }
 
   _updateMode() {
@@ -440,6 +444,7 @@ class Application {
       return;
     }
 
+    /////////////////Very Important, don't remove
     const [v_R_strafe, w_R, pose_RB] = (() => {
       // Are we in keyboard mode?
       if (!this._joystick.present) {
@@ -484,35 +489,39 @@ class Application {
     })();
 
 
-    const disable_strafe = getElement("disable_strafe").checked;
-    const v_R = disable_strafe ? [v_R_strafe[0], 0, 0] : v_R_strafe;
+    // const disable_strafe = getElement("disable_strafe").checked;
+    // const v_R = disable_strafe ? [v_R_strafe[0], 0, 0] : v_R_strafe;
+    ////////changed to remove the button
+    const v_R = v_R_strafe;
 
-    {
-      const desired_rot_cmd = getElement('desired_rot_cmd');
-      const scaled_w =
-            Math.max(-1.0, Math.min(1.0, w_R[2] / CMD_MAX_RATE_Z));
-      desired_rot_cmd.setAttribute('x', `${scaled_w * 38 + 48}%`);
 
-      const desired_trans_cmd = getElement('desired_trans_cmd');
-      const scaled_x =
-            Math.max(
-              -1.0,
-              Math.min(
-                1.0,
-                asymmetricUnscale(
-                  v_R[0], this.getMaxReverseSpeed(), this.getMaxForwardSpeed())));
-      const scaled_y =
-            Math.max(-1.0, Math.min(1.0, v_R[1] / CMD_MAX_RATE_Y));
-      desired_trans_cmd.setAttribute('x', `${scaled_y * 38 + 48}%`);
-      desired_trans_cmd.setAttribute('y', `${-scaled_x * 38 + 48}%`);
-    }
+        //////////////////////For removing graph in between
+    // {
+    //   const desired_rot_cmd = getElement('desired_rot_cmd');
+    //   const scaled_w =
+    //         Math.max(-1.0, Math.min(1.0, w_R[2] / CMD_MAX_RATE_Z));
+    //   desired_rot_cmd.setAttribute('x', `${scaled_w * 38 + 48}%`);
 
-    const v_norm = Math.sqrt(v_R[0] * v_R[0] + v_R[1] * v_R[1]);
-    const w_norm = Math.sqrt(w_R[2] * w_R[2]);
-    const movement_commanded = (
-      v_norm > TRANSLATION_EPSILON ||
-        w_norm > ROTATION_EPSILON);
-    const force_step = getElement("always_step").checked;
+    //   const desired_trans_cmd = getElement('desired_trans_cmd');
+    //   const scaled_x =
+    //         Math.max(
+    //           -1.0,
+    //           Math.min(
+    //             1.0,
+    //             asymmetricUnscale(
+    //               v_R[0], this.getMaxReverseSpeed(), this.getMaxForwardSpeed())));
+    //   const scaled_y =
+    //         Math.max(-1.0, Math.min(1.0, v_R[1] / CMD_MAX_RATE_Y));
+    //   desired_trans_cmd.setAttribute('x', `${scaled_y * 38 + 48}%`);
+    //   desired_trans_cmd.setAttribute('y', `${-scaled_x * 38 + 48}%`);
+    // }
+
+    // const v_norm = Math.sqrt(v_R[0] * v_R[0] + v_R[1] * v_R[1]);
+    // const w_norm = Math.sqrt(w_R[2] * w_R[2]);
+    // const movement_commanded = (
+    //   v_norm > TRANSLATION_EPSILON ||
+    //     w_norm > ROTATION_EPSILON);
+    // const force_step = getElement("always_step").checked;
 
     let command = {
       "command" : {
@@ -520,28 +529,30 @@ class Application {
           if (this._mode == "off") { return "stopped"; }
           if (this._mode == "stop") { return "zero_velocity" ;}
           if (this._mode == "idle") { return "rest"; }
-
-          if (!movement_commanded && !force_step &&
-              (this._mode == "walk" ||
-               this._mode == "pronk")) {
-            return "rest";
-          }
+                  //////////////////////For removing graph in between
+          // if (!movement_commanded && !force_step &&
+          //     (this._mode == "walk" ||
+          //      this._mode == "pronk")) {
+          //   return "rest";
+          // }
           if (this._mode == "walk") { return "walk"; }
           if (this._mode == "pronk") { return "jump"; }
           if (this._mode == "traj_replay") { return "traj_replay"; }
-          if (this._mode == "pee") { return "pee"; }
           if (this._mode == "leg") { return "leg"; }
+          if (this._mode == "pee") { return "pee"; }
           if (this._mode == "backflip") { return "backflip"; }
           return "zero_velocity";
         })(),
       },
     };
 
-    const record_data = getElement("record_data").checked;
+    // const record_data = getElement("record_data").checked;
     // Unset leaves the current value alone, but we can just send it
     // every time.
-    command["command"]["log"] = record_data ? "enable" : "disable";
-
+    // command["command"]["log"] = record_data ? "enable" : "disable";
+    
+    
+    
     command["command"]["v_R"] = v_R;
     command["command"]["w_R"] = w_R;
 
@@ -550,24 +561,24 @@ class Application {
         offset_RB : pose_RB,
       };
     }
+    //////////////////////For removing graph in between
+    // if (command["command"]["mode"] == "jump") {
+    //   command["command"]["jump"] = {
+    //     "acceleration" : this.getJumpAcceleration(),
+    //     "repeat" : getElement("jump_repeat").checked,
+    //   };
+    // } else if (command["command"]["mode"] == "walk") {
+    //   const height_engaged = (
+    //     this._joystick.down(Joystick.BUTTON_SHOULDER_RB) ||
+    //       this._keys['h']);
+    //   const maximize_flight = getElement("maximize_flight").checked;
 
-    if (command["command"]["mode"] == "jump") {
-      command["command"]["jump"] = {
-        "acceleration" : this.getJumpAcceleration(),
-        "repeat" : getElement("jump_repeat").checked,
-      };
-    } else if (command["command"]["mode"] == "walk") {
-      const height_engaged = (
-        this._joystick.down(Joystick.BUTTON_SHOULDER_RB) ||
-          this._keys['h']);
-      const maximize_flight = getElement("maximize_flight").checked;
-
-      command["command"]["walk"] = {
-        "step_height" : height_engaged ?
-          Number(getElement("height_scale").value) : 1.0,
-        "maximize_flight" : maximize_flight,
-      };
-    }
+    //   command["command"]["walk"] = {
+    //     "step_height" : height_engaged ?
+    //       Number(getElement("height_scale").value) : 1.0,
+    //     "maximize_flight" : maximize_flight,
+    //   };
+    // }
 
     const command_string = JSON.stringify(command);
     getElement('current_json_command').innerHTML = command_string;
@@ -605,7 +616,7 @@ class Application {
         if (cur == "jump") { return "pronk" };
         if (cur == "traj_replay") { return "traj_replay" };
         if (cur == "leg") { return "leg" };
-        if (cur == "pee") { return "pee" };
+        if (this._mode == "pee") { return "pee"; }
         if (cur == "backflip") { return "backflip" };
         return "stop";
       })();
@@ -630,7 +641,7 @@ class Application {
         if (cur == "jump") { return "pronk"; }
         if (cur == "traj_replay") { return "traj_replay" };
         if (cur == "leg") { return "leg" };
-        if (cur == "pee") { return "pee" };
+        if (this._mode == "pee") { return "pee"; }
         if (cur == "backflip") { return "backflip" };
         return cur;
       })() + ')';
@@ -648,27 +659,29 @@ class Application {
       }
     }
 
-    // Movement command.
-    {
-      const desired_R = this._state.state.robot.desired_R;
-      const desired_rot_act = getElement('desired_rot_act');
-      const scaled_w =
-            Math.max(-1.0, Math.min(1.0, desired_R.w[2] / CMD_MAX_RATE_Z));
-      desired_rot_act.setAttribute('x', `${scaled_w * 38 + 49}%`);
 
-      const desired_trans_act = getElement('desired_trans_act');
-      const scaled_x =
-            Math.max(-1.0, Math.min(
-              1.0,
-              asymmetricUnscale(
-                desired_R.v[0],
-                this.getMaxReverseSpeed(),
-                this.getMaxForwardSpeed())));
-      const scaled_y =
-            Math.max(-1.0, Math.min(1.0, desired_R.v[1] / CMD_MAX_RATE_Y));
-      desired_trans_act.setAttribute('x', `${scaled_y * 38 + 49}%`);
-      desired_trans_act.setAttribute('y', `${-scaled_x * 38 + 49}%`);
-    }
+        //////////////////////For removing graph in between
+    // Movement command.
+    // {
+    //   const desired_R = this._state.state.robot.desired_R;
+    //   const desired_rot_act = getElement('desired_rot_act');
+    //   const scaled_w =
+    //         Math.max(-1.0, Math.min(1.0, desired_R.w[2] / CMD_MAX_RATE_Z));
+    //   desired_rot_act.setAttribute('x', `${scaled_w * 38 + 49}%`);
+
+    //   const desired_trans_act = getElement('desired_trans_act');
+    //   const scaled_x =
+    //         Math.max(-1.0, Math.min(
+    //           1.0,
+    //           asymmetricUnscale(
+    //             desired_R.v[0],
+    //             this.getMaxReverseSpeed(),
+    //             this.getMaxForwardSpeed())));
+    //   const scaled_y =
+    //         Math.max(-1.0, Math.min(1.0, desired_R.v[1] / CMD_MAX_RATE_Y));
+    //   desired_trans_act.setAttribute('x', `${scaled_y * 38 + 49}%`);
+    //   desired_trans_act.setAttribute('y', `${-scaled_x * 38 + 49}%`);
+    // }
 
     // Temperature
     {

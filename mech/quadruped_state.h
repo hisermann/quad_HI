@@ -73,6 +73,12 @@ struct QuadrupedState {
 
   // The leg end-effector level.
   struct Leg {
+    enum Mode {
+        kStanceAllLeg,
+        kSwingOneLeg,
+        kDone,
+      };
+    Mode mode = kStanceAllLeg;
     int leg = 0;
     base::Point3D position;
     base::Point3D velocity;
@@ -81,6 +87,7 @@ struct QuadrupedState {
 
     template <typename Archive>
     void Serialize(Archive* a) {
+      a->Visit(MJ_NVP(mode));
       a->Visit(MJ_NVP(leg));
       a->Visit(MJ_NVP(position));
       a->Visit(MJ_NVP(velocity));
@@ -92,6 +99,7 @@ struct QuadrupedState {
   };
 
   std::vector<Leg> legs_B;
+  Leg leg_onemove, pee_behavior;
 
   // And finally, the robot level.
   struct Robot {
@@ -319,6 +327,8 @@ struct QuadrupedState {
   void Serialize(Archive* a) {
     a->Visit(MJ_NVP(joints));
     a->Visit(MJ_NVP(legs_B));
+    a->Visit(MJ_NVP(leg_onemove));
+    a->Visit(MJ_NVP(pee_behavior));
     a->Visit(MJ_NVP(robot));
 
     a->Visit(MJ_NVP(stand_up));
@@ -407,5 +417,19 @@ struct IsEnum<mjmech::mech::QuadrupedState::Walk::VLeg::Mode> {
   }
 };
 
+template <>
+struct IsEnum<mjmech::mech::QuadrupedState::Leg::Mode> {
+  static constexpr bool value = true;
+
+  using M = mjmech::mech::QuadrupedState::Leg::Mode;
+
+  static inline std::map<M, const char*> map() {
+    return {
+      { M::kStanceAllLeg, "stanceAllLeg" },
+      { M::kSwingOneLeg, "swingOneLeg" },
+      { M::kDone, "done" },
+    };
+  }
+};
 }
 }

@@ -4,7 +4,7 @@
 <html>
   <head>
     <meta charset="UTF-8"/>
-    <title>mjmech quad control</title>
+    <title>DFKI Quad Control</title>
     <link rel="stylesheet" href="styles.css"/>
   </head>
   <body>
@@ -25,20 +25,23 @@
         <input type="radio" id="idle" name="mode" class="mode_check" value="idle">
         <label for="idle" class="mode_label">Idle</label>
 
-        <input type="radio" id="walk" name="mode" class="mode_check" value="walk">
-        <label for="walk" class="mode_label">Walk</label>
+        <!-- <input type="radio" id="walk" name="mode" class="mode_check" value="walk">
+        <label for="walk" class="mode_label">Walk</label> -->
 
-        <input type="radio" id="pronk" name="mode" class="mode_check" value="pronk">
-        <label for="pronk" class="mode_label">Pronk</label>
+        <!-- <input type="radio" id="pronk" name="mode" class="mode_check" value="pronk">
+        <label for="pronk" class="mode_label">Pronk</label> -->
         <!--added new drop-->
-        <input type="radio" id="pee" name="mode" class="mode_check" value="pee">
-        <label for="pee" class="mode_label">Pee</label>
+        
         <input type="radio" id="leg" name="mode" class="mode_check" value="leg">
         <label for="leg" class="mode_label">Hello</label>
+        <input type="radio" id="pee" name="mode" class="mode_check" value="pee">
+        <label for="pee" class="mode_label">Pee</label>
         <input type="radio" id="traj_replay" name="mode" class="mode_check" value="traj_replay">
-        <label for="traj_replay" class="mode_label">Traj_Replay</label>
-        <input type="radio" id="backflip" name="mode" class="mode_check" value="backflip">
-        <label for="backflip" class="mode_label">Backflip</label>
+        <label for="traj_replay" class="mode_label">Replay</label>
+
+
+        <!-- <input type="radio" id="backflip" name="mode" class="mode_check" value="backflip">
+        <label for="backflip" class="mode_label">Backflip</label> -->
         
       </div>
     </div>
@@ -46,8 +49,14 @@
       <div id="fault_text"></div>
     </div>
 
+
+    <div id="power_off" class="toplevel">
+      <input type="button" id="power_off" value="Power Off / Clear Fault"></input>
+    </div>
+    
+  
     <div id="command" class="toplevel">
-      <svg id="command_plot">
+      <!-- <svg id="command_plot">
         <defs>
           <marker id="arrowhead" markerWidth="10" markerHeight="7"
                   refX="0" refY="3.5" orient="auto">
@@ -111,14 +120,15 @@
                 x="49%" y="49%" width="2%" height="2%"
                 fill="blue" stroke="black" stroke-width="1.5"/>
         </svg>
-      </svg>
+      </svg> -->
     </div>
-
-    <div id="advanced_command_container" class="toplevel">
-      <div id="advanced_command">
-        <input id="advanced_expander_input" type="checkbox" class="toggle">
-        <label id="advanced_expander_label" for="advanced_expander_input"
-               class="lbl-toggle">ADVANCED</label>
+  
+    <div id="advanced_command_container" class="toplevel" style="display: none;">
+      <div id="advanced_command" style="display: none;" >
+        <!-- CHANGED HERE type= "checkbox" -->
+        <input id="advanced_expander_input" type="hidden" class="toggle">
+        <!-- <label id="advanced_expander_label" for="advanced_expander_input"
+               class="lbl-toggle">ADVANCED</label> -->
         <div id="advanced_content_container" class="collapsible-content-vert">
           <div class="bottom-advanced">
             <select id="jump_acceleration">
@@ -127,27 +137,27 @@
               <option value="8">8 m/s^2</option>
               <option value="10">10 m/s^2</option>
             </select>
-            <label for="jump_acceleration">Jump Accel</label>
+            <!-- <label for="jump_acceleration">Jump Accel</label> -->
             <select id="max_forward_speed">
               <option value="0.5">0.5 m/s</option>
               <option value="1" selected="true">1 m/s</option>
               <option value="2">2 m/s</option>
               <option value="3">3 m/s</option>
             </select>
-            <label for="max_forward_speed">Max Forward Speed</label>
+            <!-- <label for="max_forward_speed">Max Forward Speed</label> -->
             <select id="height_scale">
               <option value="1.5">1.5</option>
               <option value="2.0" selected="true">2.0</option>
               <option value="2.5">2.5</option>
               <option value="3.0">3.0</option>
             </select>
-            <label for="height_scale">Step Height Scale</label>
-            <input type="checkbox" id="jump_repeat" checked="true">Repeat Jump</input>
-            <input type="checkbox" id="always_step">Always Step</input>
-            <input type="checkbox" id="disable_strafe" checked="true">Disable Strafe</input>
-            <input type="checkbox" id="maximize_flight">Maximize Flight</input>
-            <input type="checkbox" id="record_data">Record Data</input>
-            <input type="button" id="power_off" value="Power Off / Clear Fault"></input>
+            <!-- <label for="height_scale">Step Height Scale</label> -->
+            <!-- <input type="checkbox" id="jump_repeat" checked="true">Repeat Jump</input>
+            <input type="checkbox" id="always_step">Always Step</input> -->
+            <!-- <input type="checkbox" id="disable_strafe" checked="true">Disable Strafe</input> -->
+            <!-- <input type="checkbox" id="maximize_flight">Maximize Flight</input>
+            <input type="checkbox" id="record_data">Record Data</input> -->
+            <!-- <input type="button" id="power_off" value="Power Off / Clear Fault"></input> -->
           </div>
         </div>
       </div>
@@ -164,7 +174,7 @@
       <div id="temperature_text">__ C</div>
     </div>
 
-    <div id="current_json_command_container" class="toplevel">
+    <div id="current_json_command_container" class="toplevel" style="display: none;">
       <div id="current_json_command"></div>
     </div>
 
@@ -174,7 +184,7 @@
       </div>
     </div>
 
-    <!-- <img id="mjbots" src="/mjbots.png"/> -->
+    <img id="DFKI" src="/ulab.gif"/>
 
     <div id="robot_state"></div>
     <div id="current_joystick"></div>
