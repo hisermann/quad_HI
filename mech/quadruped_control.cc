@@ -1085,8 +1085,10 @@ class QuadrupedControl::Impl {
     // planarProblemBackflip_23012023_frameCorrected_interp
     // planarProblemSaltoForward_23012023_frameCorrected_interp
     // std::string filename = "modified_traj.csv";
+    try  {
     io::CSVReader<36> in(filename);
     
+
     in.read_header(io::ignore_extra_column,
                     "q_fl1", "qd_fl1", "Tau_fl1", "q_fl2", "qd_fl2", "Tau_fl2", "q_fl3", "qd_fl3", "Tau_fl3", // front left leg
                     "q_fr1", "qd_fr1", "Tau_fr1", "q_fr2", "qd_fr2", "Tau_fr2", "q_fr3", "qd_fr3", "Tau_fr3", // front right leg
@@ -1128,6 +1130,10 @@ class QuadrupedControl::Impl {
     y_vec_initPose = y_vec[0];
     std::cout << "CSV file read, total rows: " << time_trajectory << std::endl;
     // std::cout << "Initial pose : " << y_vec_initPose << std::endl;
+    } catch (const io::error::can_not_open_file& e) {
+      std::cout << "Warning: cannot open CSV file " << filename; 
+      return;
+    }
   }
 
 
