@@ -47,3 +47,31 @@ Running simulation
 ```
 
 Then point your web browser to `http://localhost:4778`
+
+
+ADD controller
+--------------
+
+relevant files:
+
+- `mech/quadruped_command.h`:
+  Add Mode in `struct QuadrupedCommand`
+  Map mode to name in `struct IsEnum`
+
+- `mech/quadruped_control.cc`:
+  add case in `RunControl`
+  write control function
+  add case in `MaybeChangeMode` (2 times)
+
+- `mech/web_control_assets/js/app.js`:
+  include mode 3 times
+
+- `mech/web_control_assets/index.html`:
+  add radio button
+
+Maybe as well:
+- `mech/quadruped_state.h`
+  states for all state machines etc
+
+- `mech/quadruped_config.h`
+  configure behavior parameters

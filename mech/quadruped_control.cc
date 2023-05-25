@@ -779,6 +779,10 @@ class QuadrupedControl::Impl {
 	      DoControl_Pee();  
 	      break;
       }
+      case QM::kTestbehavior: {
+        DoControl_Testbehavior();
+        break;
+      }
       case QM::kNumModes: {
         mjlib::base::AssertNotReached();
       }
@@ -833,6 +837,7 @@ class QuadrupedControl::Impl {
       case QM::kWalk:
       case QM::kJointTraj:
       case QM::kPee:
+      case QM::kTestbehavior:
       case QM::kBackflip: {
         // This can only be done from certain configurations, where we
         // know all four legs are on the ground.  Modify our command
@@ -896,6 +901,7 @@ class QuadrupedControl::Impl {
           status_.state.stand_up = {};
           break;
         }
+        case QM::kTestbehavior: // TODO: Move later
         case QM::kJump: {
           status_.state.jump = {};
           break;
@@ -1577,6 +1583,10 @@ class QuadrupedControl::Impl {
     }  
     
   }
+  void DoControl_Testbehavior(){
+    DoControl_Walk();
+  }
+
   void DoControl_StandUp() {
     // While we are standing up, the RB transform is always nil.
     status_.state.robot.frame_RB = {};
