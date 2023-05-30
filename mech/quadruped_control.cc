@@ -1104,11 +1104,8 @@ class QuadrupedControl::Impl {
     // std::string filename = "trajectories/planarJumpOnPlace_full_interp_frameCorrected.csv";
     // std::string filename = "trajectories/planarSalto_full_interp_frameCorrected.csv";
     // std::string filename = "trajectories/control_test.csv";
-    // std::string filename = "trajectories/planarProblemSaltoForward17032023_frameCorrected_interp.csv";  // working trajectory from Gabriele 
-    // std::string filename = "trajectories/planarProblemSaltoForward200423_reverse_frameCorrected_interp.csv";  // new trajectory from Gabriele 
-    // std::string filename = "trajectories/planarProblemSaltoForward_240423_frameCorrected_interp.csv";
-    std::string filename = "trajectories/tau_last_removed.csv";
-    // planarProblemSaltoForward200423_frameCorrected_interp
+    std::string filename = "trajectories/planarProblemBackflip_23012023_frameCorrected_interp.csv";
+    // planarProblemBackflip_23012023_frameCorrected_interp
     // planarProblemSaltoForward_23012023_frameCorrected_interp
     // std::string filename = "modified_traj.csv";
     try  {
@@ -1149,7 +1146,6 @@ class QuadrupedControl::Impl {
       Eigen::VectorXd Tau = Eigen::VectorXd::Zero(12);
       Tau(0) = Tau_fl2, Tau(1) = Tau_fl3, Tau(2) = Tau_fl1, Tau(3) = Tau_fr2, Tau(4) = Tau_fr3, Tau(5) = Tau_fr1;
       Tau(6) = Tau_bl2, Tau(7) = Tau_bl3, Tau(8) = Tau_bl1, Tau(9) = Tau_br2, Tau(10) = Tau_br3, Tau(11) = Tau_br1;
-
       
       y_vec.push_back(y);
       yd_vec.push_back(yd);
