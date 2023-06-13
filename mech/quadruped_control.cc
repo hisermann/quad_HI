@@ -1582,27 +1582,38 @@ class QuadrupedControl::Impl {
         // out_joint.kp_scale = 0.0;
         // out_joint.kd_scale = 0.0;
 
-
-        // PURE TORQUE CONTROL Works But only in simulation
-
-        if(contact == 1){
-          out_joint.torque_Nm += Tau[j] + 0.05*(y[j] * rad2deg - status_.state.joints[j].angle_deg) + 0.05* (yd[j] * rad2deg - status_.state.joints[j].velocity_dps);
-          out_joint.kp_scale = 0.00;
-          out_joint.kd_scale = 0.00;
-        }
-        if(contact == 0){
+        // hip joints
+        if (j % 3 == 2){
           out_joint.angle_deg = y[j] * rad2deg;
           out_joint.velocity_dps = yd[j] * rad2deg;
           out_joint.kp_scale = 2.0;
           out_joint.kd_scale = 2.0;
-        }
-        if(contact == 2){
-          // out_joint.angle_deg = y[j] * rad2deg;
-          // out_joint.velocity_dps = yd[j] * rad2deg;
-          out_joint.torque_Nm += Tau[j] + 0.02*(y[j] * rad2deg - status_.state.joints[j].angle_deg) + 0.02* (yd[j] * rad2deg - status_.state.joints[j].velocity_dps);
+        } else {
+          out_joint.torque_Nm += Tau[j] + 0.05*(y[j] * rad2deg - status_.state.joints[j].angle_deg) + 0.05* (yd[j] * rad2deg - status_.state.joints[j].velocity_dps);
           out_joint.kp_scale = 0.00;
           out_joint.kd_scale = 0.00;
         }
+
+        // PURE TORQUE CONTROL Works But only in simulation
+
+        // if(contact == 1){
+        //   out_joint.torque_Nm += Tau[j] + 0.05*(y[j] * rad2deg - status_.state.joints[j].angle_deg) + 0.05* (yd[j] * rad2deg - status_.state.joints[j].velocity_dps);
+        //   out_joint.kp_scale = 0.00;
+        //   out_joint.kd_scale = 0.00;
+        // }
+        // if(contact == 0){
+        //   out_joint.angle_deg = y[j] * rad2deg;
+        //   out_joint.velocity_dps = yd[j] * rad2deg;
+        //   out_joint.kp_scale = 2.0;
+        //   out_joint.kd_scale = 2.0;
+        // }
+        // if(contact == 2){
+        //   // out_joint.angle_deg = y[j] * rad2deg;
+        //   // out_joint.velocity_dps = yd[j] * rad2deg;
+        //   out_joint.torque_Nm += Tau[j] + 0.02*(y[j] * rad2deg - status_.state.joints[j].angle_deg) + 0.02* (yd[j] * rad2deg - status_.state.joints[j].velocity_dps);
+        //   out_joint.kp_scale = 0.00;
+        //   out_joint.kd_scale = 0.00;
+        // }
 
 
         // if(contact == 1 || contact ==2 ){
