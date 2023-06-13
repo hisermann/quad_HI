@@ -44,7 +44,10 @@ df_control = pd.read_csv(folder + 'control_test.csv')
 # print(df_control.head())
 df_status =  pd.read_csv(folder + 'status_test.csv')
 # print(df_status.head())
-# df_power = pd.read_csv(folder + 'power.csv')
+try:
+    df_power = pd.read_csv(folder + 'power.csv')
+except:
+    pass
 # df_command = pd.read_csv('../results/csv_files/outside/quad_command_data_3mps_outside.csv')
 # print(df_command.head())
 # df_tauIDyn = pd.read_csv('../results/csv_files/inside/slow_walk_idyn.csv')
@@ -161,11 +164,13 @@ for i in range(4): # Legs 1,2,3,4
 # plt.close()  
 
 
-# ## POWER Consumption data plots
-
-# plt.plot(df_power['t[s]'], df_power['power_W'])
-# plt.xlabel('Time (s)')
-# plt.ylabel('Power (W)')
-# plt.title('Power = Voltage*Current')
-# plt.savefig(folder+'powerClipped.pdf',format='pdf',bbox_inches='tight')
-# plt.show()
+## POWER Consumption data plots
+try:
+    plt.plot(df_power['t[s]'], df_power['power_W'])
+    plt.xlabel('Time (s)')
+    plt.ylabel('Power (W)')
+    plt.title('Power = Voltage*Current')
+    plt.savefig(folder+'powerClipped.pdf',format='pdf',bbox_inches='tight')
+    plt.show()
+except:
+    pass

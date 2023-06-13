@@ -53,7 +53,7 @@ def main():
     
     folder_name = os.path.splitext(os.path.basename(args.log))[0]
     folder = os.path.join('analysis/', folder_name)
-    os.makedirs(folder)
+    os.makedirs(folder,exist_ok=True)
 
     # #IMU DATA 
 
@@ -294,21 +294,23 @@ def main():
     
     # POWER CONSUMPTION DATA
 
-    power_data = [(x.data.timestamp, x.data.power_W) for x in fr.items(['power'])]
-    start_s = power_data[0][0]
-    size_s = power_data[-1][0] - start_s
+    try:
+        power_data = [(x.data.timestamp, x.data.power_W) for x in fr.items(['power'])]
+        start_s = power_data[0][0]
+        size_s = power_data[-1][0] - start_s
 
-    time = np.array([x[0] - start_s for x in power_data])
-    power = np.array([x[1] for x in power_data])
-    print("time: ", time)
-    
-    power_df = pd.DataFrame({'t[s]': time, 'power_W': power})
-    power_df.to_csv(folder + '/power.csv')
-    
-    pylab.plot(time, power, linewidth=2, label='imu')
-    pylab.legend()
-    pylab.show()
-    
+        time = np.array([x[0] - start_s for x in power_data])
+        power = np.array([x[1] for x in power_data])
+        print("time: ", time)
+        
+        power_df = pd.DataFrame({'t[s]': time, 'power_W': power})
+        power_df.to_csv(folder + '/power.csv')
+        
+        pylab.plot(time, power, linewidth=2, label='imu')
+        pylab.legend()
+        pylab.show()
+    except IndexError:
+        pass
     
     print("done")
 
