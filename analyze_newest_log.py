@@ -1,7 +1,7 @@
 import os
 from os.path import dirname, basename, splitext
 import glob
-
+import pandas
 
 if __name__ == "__main__":
     base = dirname(__file__)
@@ -12,7 +12,12 @@ if __name__ == "__main__":
         print("no file found")
         exit()
     name = splitext(basename(logname))[0]
-    rename = input("New name for data: ")
+    
+    csv = pandas.read_csv(os.path.join(base,"gains.csv"))
+    
+    rename = f"kp{csv.kp[0]}kd{csv.kd[0]}"
+    
+    # rename = input("New name for data: ")
     if not rename:
         rename = name
     new_path = os.path.join(base,"analysis",rename,"")

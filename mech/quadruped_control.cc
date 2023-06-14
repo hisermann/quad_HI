@@ -197,6 +197,9 @@ class QuadrupedControl::Impl {
 
     //Read the trajectory from csv file
     read_Trajectory();
+
+    // Read the gains from csv file
+    read_gains();
     
     period_s_ = config_.period_s;
     timer_.start(mjlib::base::ConvertSecondsToDuration(period_s_),
@@ -1094,6 +1097,18 @@ class QuadrupedControl::Impl {
     ControlJoints(current_command_.joints);
   }
 
+  void read_gains()
+  {
+    std::string filename = "gains.csv";
+    io::CSVReader<2> in(filename);
+    
+
+    in.read_header(io::ignore_extra_column,"kp", "kd");
+
+    in.read_row(kp_from_file, kd_from_file);
+    std::cout << "Gains read: "<< std::endl << "kp: " << kp_from_file << " kd: " << kd_from_file << std::endl;
+  }
+
   void read_Trajectory()
   {
     //log_.warn(fmt::format("In trajectory control"));
@@ -1385,7 +1400,7 @@ class QuadrupedControl::Impl {
 
         std::cout << "norm  " << calculateNorm(tau_meas) << std::endl;
          
-        if ( calculateNorm(tau_meas) > 20.0 && temp_time > yExertion.size()/2){
+        if ( calculateNorm(tau_meas) > 20.0 && temp_time > yExertion.size()/2.){
           temp_time = 0;
           status_.state.replay_behavior.mode = M::kFlight;
           break;
@@ -1441,7 +1456,7 @@ class QuadrupedControl::Impl {
         // std::cout << "status_.state.joints[0].torque_Nm " << status_.state.joints[0].torque_Nm << std::endl;
         std::cout << "norm  " << calculateNorm(tau_meas) << std::endl;
          
-        if ( calculateNorm(tau_meas) > 10.0 && temp_time > yFlight.size()/2){
+        if ( calculateNorm(tau_meas) > 10.0 && temp_time > yFlight.size()/2.){
           temp_time = 0;
           status_.state.replay_behavior.mode = M::kLand;
           break;
@@ -1543,7 +1558,7 @@ class QuadrupedControl::Impl {
         out_joint.id = j + 1;
         out_joint.power = true;
         out_joint.angle_deg = naive_lerp(status_.state.joints[j].angle_deg, y[j] * rad2deg, interpolate_time);
-        if(j == 3 || j== 6 || j== 9 || j== 12){
+        if(j % 3 == 2){
           out_joint.kp_scale = 5;  // 200*2
           out_joint.kd_scale = 1.0;  // 6 * 10
         } 
@@ -1582,14 +1597,16 @@ class QuadrupedControl::Impl {
         // out_joint.kp_scale = 0.0;
         // out_joint.kd_scale = 0.0;
 
-        // hip joints
+        // shoulder joints
         if (j % 3 == 2){
           out_joint.angle_deg = y[j] * rad2deg;
           out_joint.velocity_dps = yd[j] * rad2deg;
           out_joint.kp_scale = 2.0;
           out_joint.kd_scale = 2.0;
         } else {
-          out_joint.torque_Nm += Tau[j] + 0.05*(y[j] * rad2deg - status_.state.joints[j].angle_deg) + 0.05* (yd[j] * rad2deg - status_.state.joints[j].velocity_dps);
+          out_joint.torque_Nm += Tau[j] + kp_from_file*(y[j] * rad2deg - status_.state.joints[j].angle_deg) + kd_from_file* (yd[j] * rad2deg - status_.state.joints[j].velocity_dps);
+          out_joint.angle_deg = y[j] * rad2deg;
+          out_joint.velocity_dps = yd[j] * rad2deg;
           out_joint.kp_scale = 0.00;
           out_joint.kd_scale = 0.00;
         }
@@ -1659,7 +1676,7 @@ class QuadrupedControl::Impl {
           out_joint.id = j + 1;
           out_joint.power = true;
           out_joint.angle_deg = naive_lerp(status_.state.joints[j].angle_deg, y[j] * rad2deg, interpolate_time);
-          if(j == 3 || j== 6 || j== 9 || j== 12){
+          if(j % 3 == 2){
             out_joint.kp_scale = 5;  // 200*2
             out_joint.kd_scale = 1.0;  // 6 * 10
           } 
@@ -3573,6 +3590,10 @@ class QuadrupedControl::Impl {
       log_.warn(message);
     }
   }
+
+  // pd gains
+  double kp_from_file = 0.05;
+  double kd_from_file = 0.05;
 
   // For control timing of trajectory
   double time_trajectory;
