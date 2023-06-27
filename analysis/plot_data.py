@@ -1,9 +1,12 @@
 import os
+from os.path import dirname
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 #from sklearn.metrics import mean_squared_error
+from plotnine import ggplot, geom_line, aes, theme_bw
+
 from cProfile import label
 
 from ctypes import util
@@ -54,8 +57,17 @@ except:
 # print(df_tauIDyn.head())
 
 # Getting data according to start and stop index
-start_t = 4.29 # inside_reg
-stop_t = 5.05 # inside_reg
+traj_path = os.path.join(dirname(dirname(__file__)), "trajectories", "planarProblemBackflip_23012023_frameCorrected_interp.csv")
+df_trajectory = pd.read_csv(traj_path)
+
+max_c = df_control['qd_fl2'].argmax()
+max_t = df_trajectory['qd_fl2'].argmax()
+
+start_t = df_control['t[s]'][max_c-max_t]
+stop_t = start_t + df_trajectory['t[s]'][len(df_trajectory)-1]
+
+# start_t = 9.2125 # inside_reg
+# stop_t = 10.2 # inside_reg
 df_control = df_control[df_control['t[s]'].between(start_t,stop_t)]
 df_status = df_status[df_status['t[s]'].between(start_t,stop_t)]
 # df_power = df_power[df_power['t[s]'].between(start_t,stop_t)]
@@ -84,6 +96,8 @@ column_names_torque = np.array(df_status.columns[df_status.columns.to_series().s
 # plt.close()
 
 # LEGS PLOTS
+if len(df_control) < len(df_trajectory):
+    df_trajectory = df_trajectory.iloc[:len(df_control)]
 leg_names = ['Front Left Leg', 'Front Right Leg', 'Back Left Leg', 'Back Right Leg']
 for i in range(4): # Legs 1,2,3,4
     fig, axes = plt.subplots(3, 3)
@@ -111,7 +125,7 @@ for i in range(4): # Legs 1,2,3,4
         #axes[j,2].set(ylabel='rad/s^2')
 
         axes[j,2].plot(time_status,df_status[column_names_torque[x]], label = 'joint_status')
-        # axes[j,2].plot(time_control,df_control[column_names_torque[x]], label = 'joint_command')
+        axes[j,2].plot(time_control,df_trajectory[column_names_torque[x]], label = 'trajectory')
         axes[j,2].set_title(column_names_torque[x])
         axes[j,2].set(xlabel='time(s)')
         axes[j,2].set(ylabel='Nm')
