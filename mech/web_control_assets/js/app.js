@@ -530,7 +530,6 @@ class Application {
           if (this._mode == "pronk") { return "jump"; }
           if (this._mode == "traj_replay") { return "traj_replay"; }
           if (this._mode == "pee") { return "pee"; }
-          if (this._mode == "testbehavior") { return "testbehavior"; }
           if (this._mode == "leg") { return "leg"; }
           if (this._mode == "backflip") { return "backflip"; }
           return "zero_velocity";
@@ -607,7 +606,6 @@ class Application {
         if (cur == "traj_replay") { return "traj_replay" };
         if (cur == "leg") { return "leg" };
         if (cur == "pee") { return "pee" };
-        if (cur == "testbehavior") { return "testbehavior" };
         if (cur == "backflip") { return "backflip" };
         return "stop";
       })();
@@ -633,7 +631,6 @@ class Application {
         if (cur == "traj_replay") { return "traj_replay" };
         if (cur == "leg") { return "leg" };
         if (cur == "pee") { return "pee" };
-        if (cur == "testbehavior") { return "testbehavior" };
         if (cur == "backflip") { return "backflip" };
         return cur;
       })() + ')';

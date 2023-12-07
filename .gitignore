@@ -23,4 +23,6 @@ _bazelrc_generated
 imgui.ini
 tplot2.ini
 mech_old
-trajectories
+compile_commands.json
+*.log
+analysis/*/*

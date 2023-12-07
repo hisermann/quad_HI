@@ -93,9 +93,6 @@ struct QuadrupedCommand {
     // For pee behavior
     kPee = 12,
 
-    // test behavior
-    kTestbehavior = 13,
-
     kNumModes,
   };
 
@@ -286,7 +283,6 @@ struct IsEnum<mjmech::mech::QuadrupedCommand::Mode> {
         { M::kZeroVelocity, "zero_velocity" },
         { M::kJoint, "joint" },
         { M::kPee, "pee" },
-        { M::kTestbehavior, "testbehavior" },
         { M::kLeg, "leg" },
         { M::kStandUp, "stand_up" },
         { M::kRest, "rest" },

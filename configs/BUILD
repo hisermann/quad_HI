@@ -20,9 +20,7 @@ filegroup(
     name = "configs",
     srcs = [
         "quadruped.ini",
-        "quadruped_a2.ini",
         "quada0.cfg",
         "quada1.cfg",
-        "quada2.cfg",
     ],
 )

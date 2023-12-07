@@ -20,6 +20,8 @@
 #include <boost/asio/post.hpp>
 
 #include <fmt/format.h>
+#include <iostream>
+#include <ostream>
 
 #include "mjlib/base/clipp_archive.h"
 #include "mjlib/base/json5_read_archive.h"
@@ -196,10 +198,8 @@ class QuadrupedControl::Impl {
     PopulateStatusRequest();
 
     //Read the trajectory from csv file
-    read_Trajectory();
-
-    // Read the gains from csv file
-    read_gains();
+    // read_Trajectory();
+    read_Trajectory_contact();
     
     period_s_ = config_.period_s;
     timer_.start(mjlib::base::ConvertSecondsToDuration(period_s_),
@@ -777,34 +777,33 @@ class QuadrupedControl::Impl {
         break;
       }
       case QM::kJointTraj: {
-        DoControl_Trajectory_base(y_vec[temp_time], yd_vec[temp_time], Tau_vec[temp_time], 1); 
-        
-        // switch (status_.state.replay_behavior.mode){
-        //   case QuadrupedState::Traj_replay::Mode::kExertion:{
-        //     DoControl_Trajectory(yExertion[temp_time], ydExertion[temp_time], TauExertion[temp_time], 1);
-        //     break; 
-        //   }
-        //   case QuadrupedState::Traj_replay::Mode::kFlight:{
-        //     DoControl_Trajectory(yFlight[temp_time], ydFlight[temp_time], TauFlight[temp_time], 0);
-        //     break; 
-        //   }
-        //   case QuadrupedState::Traj_replay::Mode::kLand:{
-        //     DoControl_Trajectory(yLand[temp_time], ydLand[temp_time], TauLand[temp_time], 2);
-        //     break; 
-        //   }
-        //   default:
-        //     DoControl_Trajectory(y_vec[0], yd_vec[0], Tau_vec[0], contactPhases_vec[0]); 
-        //     break;
-        // } 
-	       
+        if (!config_.replay.state_machine) { // just trajectory replay
+          std::cout<< "no state machine" << std::endl;
+          DoControl_Trajectory_base(y_vec[temp_time], yd_vec[temp_time], Tau_vec[temp_time], 1); 
+        } else { // state machine
+          std::cout<< "state machine" << std::endl;
+          switch (status_.state.replay_behavior.mode){
+            case QuadrupedState::Traj_replay::Mode::kExertion:{
+              DoControl_Trajectory(yExertion[temp_time], ydExertion[temp_time], TauExertion[temp_time], contactExertion[temp_time]);
+              break; 
+            }
+            case QuadrupedState::Traj_replay::Mode::kFlight:{
+              DoControl_Trajectory(yFlight[temp_time], ydFlight[temp_time], TauFlight[temp_time], contactFlight[temp_time]);
+              break; 
+            }
+            case QuadrupedState::Traj_replay::Mode::kLand:{
+              DoControl_Trajectory(yLand[temp_time], ydLand[temp_time], TauLand[temp_time], contactLand[temp_time]);
+              break; 
+            }
+            default:
+              DoControl_Trajectory(y_vec[0], yd_vec[0], Tau_vec[0], contactPhases_vec[0]); 
+              break;
+          } 
+        }
 	      break;
       }
       case QM::kPee: { 
 	      DoControl_Pee();  
-	      break;
-      }
-      case QM::kTestbehavior: {
-        DoControl_Testbehavior();
 	      break;
       }
       case QM::kNumModes: {
@@ -856,12 +855,41 @@ class QuadrupedControl::Impl {
         status_.state.stand_up = {};
         break;
       }
+      case QM::kJointTraj:
+      kp_map[0] = config_.replay.kp_hip_front;
+      kp_map[1] = config_.replay.kp_knee_front;
+      kp_map[2] = config_.replay.kp_abad;
+      kp_map[3] = config_.replay.kp_hip_front;
+      kp_map[4] = config_.replay.kp_knee_front;
+      kp_map[5] = config_.replay.kp_abad;
+      kp_map[6] = config_.replay.kp_hip_back;
+      kp_map[7] = config_.replay.kp_knee_back;
+      kp_map[8] = config_.replay.kp_abad;
+      kp_map[9] = config_.replay.kp_hip_back;
+      kp_map[10] = config_.replay.kp_knee_back;
+      kp_map[11] = config_.replay.kp_abad;
+
+      kd_map[0] = config_.replay.kd_hip_front;
+      kd_map[1] = config_.replay.kd_knee_front;
+      kd_map[2] = config_.replay.kd_abad;
+      kd_map[3] = config_.replay.kd_hip_front;
+      kd_map[4] = config_.replay.kd_knee_front;
+      kd_map[5] = config_.replay.kd_abad;
+      kd_map[6] = config_.replay.kd_hip_back;
+      kd_map[7] = config_.replay.kd_knee_back;
+      kd_map[8] = config_.replay.kd_abad;
+      kd_map[9] = config_.replay.kd_hip_back;
+      kd_map[10] = config_.replay.kd_knee_back;
+      kd_map[11] = config_.replay.kd_abad;
+      
+        num_of_times = 0;
+        status_.state.replay_behavior.mode = QuadrupedState::Traj_replay::Mode::kInitPose;
+        interpolate_time = 0.0;
+        //  dont break!
       case QM::kRest:
       case QM::kJump:
       case QM::kWalk:
-      case QM::kJointTraj:
       case QM::kPee:
-      case QM::kTestbehavior:
       case QM::kBackflip: {
         // This can only be done from certain configurations, where we
         // know all four legs are on the ground.  Modify our command
@@ -925,7 +953,6 @@ class QuadrupedControl::Impl {
           status_.state.stand_up = {};
           break;
         }
-        case QM::kTestbehavior: // TODO: Move later
         case QM::kJump: {
           status_.state.jump = {};
           break;
@@ -1097,18 +1124,6 @@ class QuadrupedControl::Impl {
     ControlJoints(current_command_.joints);
   }
 
-  void read_gains()
-  {
-    std::string filename = "gains.csv";
-    io::CSVReader<2> in(filename);
-    
-
-    in.read_header(io::ignore_extra_column,"kp", "kd");
-
-    in.read_row(kp_from_file, kd_from_file);
-    std::cout << "Gains read: "<< std::endl << "kp: " << kp_from_file << " kd: " << kd_from_file << std::endl;
-  }
-
   void read_Trajectory()
   {
     //log_.warn(fmt::format("In trajectory control"));
@@ -1123,7 +1138,10 @@ class QuadrupedControl::Impl {
     // std::string filename = "trajectories/planarJumpOnPlace_full_interp_frameCorrected.csv";
     // std::string filename = "trajectories/planarSalto_full_interp_frameCorrected.csv";
     // std::string filename = "trajectories/control_test.csv";
-    std::string filename = "trajectories/planarProblemBackflip_23012023_frameCorrected_interp.csv";
+    // std::string filename = "trajectories/planarProblemBackflip_23012023_frameCorrected_interp.csv";
+    // std::string filename = "trajectories/backflip_contact_frameCorrected_interp.csv";
+    // std::string filename = "trajectories/backflip231204_contact_frameCorrected_interp.csv";
+    std::string filename = "trajectories/backflip231207_contact_frameCorrected_interp.csv";
     // planarProblemBackflip_23012023_frameCorrected_interp
     // planarProblemSaltoForward_23012023_frameCorrected_interp
     // std::string filename = "modified_traj.csv";
@@ -1192,13 +1210,15 @@ class QuadrupedControl::Impl {
     // std::string filename = "trajectories/planarJumpOnPlace_full_interp_frameCorrected.csv";
     // std::string filename = "trajectories/planarSalto_full_interp_frameCorrected.csv";
     // std::string filename = "trajectories/control_test.csv";
-    std::string filename = "trajectories/planarProblemBackflip_23012023_frameCorrected_interp.csv";
+    // std::string filename = "trajectories/backflip_contact_frameCorrected_interp.csv";
+    // std::string filename = "trajectories/backflip231204_contact_frameCorrected_interp.csv";
+    std::string filename = "trajectories/backflip231207_contact_frameCorrected_interp.csv";
+    // std::string filename = "trajectories/planarProblemBackflip_23012023_frameCorrected_interp.csv";
     // planarProblemBackflip_23012023_frameCorrected_interp
     // planarProblemSaltoForward_23012023_frameCorrected_interp
     // std::string filename = "modified_traj.csv";
     try  {
     io::CSVReader<37> in(filename);
-    
     
     in.read_header(io::ignore_extra_column,
                     "q_fl1", "qd_fl1", "Tau_fl1", "q_fl2", "qd_fl2", "Tau_fl2", "q_fl3", "qd_fl3", "Tau_fl3", // front left leg
@@ -1234,6 +1254,7 @@ class QuadrupedControl::Impl {
       Eigen::VectorXd Tau = Eigen::VectorXd::Zero(12);
       Tau(0) = Tau_fl2, Tau(1) = Tau_fl3, Tau(2) = Tau_fl1, Tau(3) = Tau_fr2, Tau(4) = Tau_fr3, Tau(5) = Tau_fr1;
       Tau(6) = Tau_bl2, Tau(7) = Tau_bl3, Tau(8) = Tau_bl1, Tau(9) = Tau_br2, Tau(10) = Tau_br3, Tau(11) = Tau_br1;
+
       
       y_vec.push_back(y);
       yd_vec.push_back(yd);
@@ -1246,23 +1267,47 @@ class QuadrupedControl::Impl {
     std::cout << "CSV file read, total rows: " << time_trajectory << std::endl;
     std::cout << "File name : " << filename << std::endl << "Init pose "<< y_vec_initPose << std::endl;
     std::cout << "Contact seq : " << contactPhases_vec[0] << std::endl;
-    for(int i = 0; i < time_trajectory; i++){
-      if(contactPhases_vec[i]==1){
-        yExertion.push_back(y_vec[i]);
-        ydExertion.push_back(yd_vec[i]);
-        TauExertion.push_back(Tau_vec[i]);
-      }
-      if(contactPhases_vec[i]==0){
-        yFlight.push_back(y_vec[i]);
-        ydFlight.push_back(yd_vec[i]);
-        TauFlight.push_back(Tau_vec[i]);
-      }
-      if(contactPhases_vec[i]==2){
-        yLand.push_back(y_vec[i]);
-        ydLand.push_back(yd_vec[i]);
-        TauLand.push_back(Tau_vec[i]);
-      }
+    
+    int i = 0;
+    while (contactPhases_vec[i] && i < time_trajectory) {
+      yExertion.push_back(y_vec[i]);
+      ydExertion.push_back(yd_vec[i]);
+      TauExertion.push_back(Tau_vec[i]);
+      contactExertion.push_back(contactPhases_vec[i]);
+      i++;
     }
+    while (!contactPhases_vec[i] && i < time_trajectory) {
+      yFlight.push_back(y_vec[i]);
+      ydFlight.push_back(yd_vec[i]);
+      TauFlight.push_back(Tau_vec[i]);
+      contactFlight.push_back(contactPhases_vec[i]);
+      i++;
+    }
+    while (i < time_trajectory) {
+      yLand.push_back(y_vec[i]);
+      ydLand.push_back(yd_vec[i]);
+      TauLand.push_back(Tau_vec[i]);
+      contactLand.push_back(contactPhases_vec[i]);
+      i++;
+    }
+
+    // for(int i = 0; i < time_trajectory; i++){
+    //   if(contactPhases_vec[i]==1){
+    //     yExertion.push_back(y_vec[i]);
+    //     ydExertion.push_back(yd_vec[i]);
+    //     TauExertion.push_back(Tau_vec[i]);
+    //   }
+    //   else if(contactPhases_vec[i]==0){
+    //     yFlight.push_back(y_vec[i]);
+    //     ydFlight.push_back(yd_vec[i]);
+    //     TauFlight.push_back(Tau_vec[i]);
+    //   }
+    //   else if(contactPhases_vec[i]==2){
+    //     yLand.push_back(y_vec[i]);
+    //     ydLand.push_back(yd_vec[i]);
+    //     TauLand.push_back(Tau_vec[i]);
+    //   }
+    // }
     std::cout << "Size of exertion phases: " << yExertion.size() << std::endl;
     std::cout << "Size of flight phases: " << TauFlight.size() << std::endl;
     std::cout << "Size of land phases: " << ydLand.size() << std::endl;
@@ -1285,6 +1330,9 @@ class QuadrupedControl::Impl {
 
     return std::sqrt(sumOfSquares);
   }
+
+  
+
   void DoControl_Trajectory(Eigen::VectorXd y, Eigen::VectorXd yd, Eigen::VectorXd Tau, int contact){
     
     std::vector<QC::Joint> out_joints;
@@ -1295,31 +1343,59 @@ class QuadrupedControl::Impl {
     {
       /////////// Interpolation phase
       case M::kInitPose:{
+        UpdateCommandedR();
+
         bool all_done = true;
         for (uint j = 0; j < 12; j++) {
           QC::Joint out_joint;
           out_joint.id = j + 1;
           out_joint.power = true;
           out_joint.angle_deg = naive_lerp(status_.state.joints[j].angle_deg, y[j] * rad2deg, interpolate_time);
-          if(j == 3 || j== 6 || j== 9 || j== 12){
-            out_joint.kp_scale = 5;  // 200*2
-            out_joint.kd_scale = 1.0;  // 6 * 10
+          if(j % 3 == 2){
+            out_joint.kp_scale = config_.replay.kp_abad_init;  // 200*2
+            out_joint.kd_scale = config_.replay.kd_abad_init;  // 6 * 10
           }
           else{
-            out_joint.kp_scale = 6;   //50*4 
-            out_joint.kd_scale = 1.0;  // 6*5
+            out_joint.kp_scale = config_.replay.kp_legs_init;   //50*4 
+            out_joint.kd_scale = config_.replay.kd_legs_init;  // 6*5
           }
           if (std::abs(y_vec_initPose[j] * rad2deg - status_.state.joints[j].angle_deg) > 5) {
             all_done = false;
           }
+          if (interpolate_time >= 1.0){
+          all_done = true;
+          }
+        
           // std::cout<< "Angle : "<< out_joint.angle_deg << std::endl; 
           out_joints.push_back(out_joint);
         }
-        interpolate_time = interpolate_time + 0.0025;
         if (all_done){
+          // overwrite joint commands
+          out_joints.clear();
+          for (uint j = 0; j < 12; j++) {
+            QC::Joint out_joint;
+            out_joint.id = j + 1;
+            out_joint.power = true;
+            out_joint.angle_deg = y[j] * rad2deg;
+            if(j % 3 == 2){
+              out_joint.kp_scale = config_.replay.kp_abad_init;  // 200*2
+              out_joint.kd_scale = config_.replay.kd_abad_init;  // 6 * 10
+            } 
+            // shoulder defualt kp = 200, else kp = 50
+            else{
+              out_joint.kp_scale = config_.replay.kp_legs_init;   //50*4 
+              out_joint.kd_scale = config_.replay.kd_legs_init;  // 6*5
+            }
+            out_joints.push_back(out_joint);
+          }
+        } else {
+          interpolate_time = interpolate_time + 0.0025;
+        }
+        if (all_done && status_.state.robot.desired_R.v.norm() > 0.1){
           interpolate_time = 0.0; 
           // num_of_times += 1;
           temp_time = 0;
+          repeated_timesteps = 0;
           status_.state.replay_behavior.mode = M::kExertion;
           break;
         }
@@ -1336,94 +1412,58 @@ class QuadrupedControl::Impl {
           out_joint.power = true;
           out_joint.angle_deg = y[j] * rad2deg ;
           out_joint.velocity_dps = yd[j] * rad2deg;
-          // out_joint.kp_scale = 0.5;
-          // out_joint.kd_scale = 0.5;
-          // out_joint.torque_Nm = Tau[j];
-          // out_joint.torque_Nm += Tau[j] + 0.02*(y[j] * rad2deg - status_.state.joints[j].angle_deg) + 0.02* (yd[j] * rad2deg - status_.state.joints[j].velocity_dps);
-          // if(contact == 1 ){
-          //   // out_joint.torque_Nm +=  0.05*(y[j] * rad2deg - status_.state.joints[j].angle_deg) + 0.15* (yd[j] * rad2deg - status_.state.joints[j].velocity_dps);
-          //   // out_joint.kp_scale = 2.0;
-          //   // out_joint.kd_scale = 2.0;
-          //   // out_joint.torque_Nm =(Tau[j]-status_.state.joints[j].torque_Nm);
-            if(j == 0 || j== 1 || j== 3 || j== 4){
-              out_joint.kp_scale = 0.5;  // 200*2
-              out_joint.kd_scale = 0.5;  // 6 * 10
-              out_joint.torque_Nm = Tau[j];
-            } 
-            if(j == 6 || j== 7 || j== 9 || j== 10){
-              out_joint.kp_scale = 0.5;  // 200*2
-              out_joint.kd_scale = 0.5;  // 6 * 10
-              out_joint.torque_Nm = Tau[j];
-            } 
-          // }
-          // if(contact == 0){
-          //   if(j == 0 || j== 1 || j== 3 || j== 4){
-          //     out_joint.kp_scale = 2.0;  // 200*2
-          //     out_joint.kd_scale = 2.0;  // 6 * 10
-          //   } 
-          //   if(j == 6 || j== 7 || j== 9 || j== 10){
-          //     out_joint.kp_scale = 2.0;  // 200*2
-          //     out_joint.kd_scale = 2.0;  // 6 * 10
-          //   } 
-          // }
-          // if(contact == 2){
-          //   if(j == 0 || j== 1 || j== 3 || j== 4){
-          //     out_joint.kp_scale = 2.0;  // 200*2
-          //     out_joint.kd_scale = 2.0;  // 6 * 10
-          //   } 
-          //   if(j == 6 || j== 7 || j== 9 || j== 10){
-          //     out_joint.kp_scale = 2.0;  // 200*2
-          //     out_joint.kd_scale = 2.0;  // 6 * 10
-          //   } 
-          // }
-        
-          // PURE TORQUE CONTROL Works But only in simulation
-          // out_joint.torque_Nm += Tau[j] + 0.2*(y[j] * rad2deg - status_.state.joints[j].angle_deg) + 0.2* (yd[j] * rad2deg - status_.state.joints[j].velocity_dps);
-          // if(contact == 1){
-          //   out_joint.torque_Nm += Tau[j] + 0.02*(y[j] * rad2deg - status_.state.joints[j].angle_deg) + 0.02* (yd[j] * rad2deg - status_.state.joints[j].velocity_dps);
-          // }
-          // if(contact == 0){
-          //   out_joint.angle_deg = y[j] * rad2deg;
-          //   out_joint.velocity_dps = yd[j] * rad2deg;
-          // }
-          // if(contact == 2){
-          //   // out_joint.angle_deg = y[j] * rad2deg;
-          //   // out_joint.velocity_dps = yd[j] * rad2deg;
-          //   out_joint.torque_Nm += Tau[j] + 0.02*(y[j] * rad2deg - status_.state.joints[j].angle_deg) + 0.02* (yd[j] * rad2deg - status_.state.joints[j].velocity_dps);
-          // }
-          // std::cout << "Contact Phase : " << contact << std::endl;
-          // std::cout<< "Angle : "<< out_joint.angle_deg << std::endl; 
+          
+          // abad 
+          if (j % 3 == 2){
+            out_joint.angle_deg = y[j] * rad2deg;
+            out_joint.velocity_dps = yd[j] * rad2deg;
+            out_joint.kp_scale = kp_map[j];
+            out_joint.kd_scale = kd_map[j];
+          } else {
+            if (config_.replay.torque_control){
+              out_joint.torque_Nm += Tau[j] + kp_map[j]*50*rad2deg*(y[j] * rad2deg - status_.state.joints[j].angle_deg) + kd_map[j]*6*rad2deg* (yd[j] * rad2deg - status_.state.joints[j].velocity_dps);
+              out_joint.angle_deg = y[j] * rad2deg;
+              out_joint.velocity_dps = yd[j] * rad2deg;
+              out_joint.kp_scale = 0.00;
+              out_joint.kd_scale = 0.00;
+            } else {
+              out_joint.angle_deg = y[j] * rad2deg;
+              out_joint.velocity_dps = yd[j] * rad2deg;
+              out_joint.kp_scale = kp_map[j];
+              out_joint.kd_scale = kd_map[j];
+
+              std::cout << "kp" << j <<": " << kp_map[j] << std::endl;
+              std::cout << "kd" << j <<": " << kd_map[j] << std::endl;
+            }
+          }
+
+
+            
+            
           tau_meas.push_back(status_.state.joints[j].torque_Nm);
           out_joints.push_back(out_joint);
         }  
         temp_time = temp_time + 1;
 
         std::cout << "norm  " << calculateNorm(tau_meas) << std::endl;
-         
-        if ( calculateNorm(tau_meas) > 20.0 && temp_time > yExertion.size()/2.){
+
+        if (temp_time == yExertion.size()){
           temp_time = 0;
+          repeated_timesteps = 0;
           status_.state.replay_behavior.mode = M::kFlight;
           break;
         }
-        else if(temp_time == yExertion.size()){
-          temp_time = temp_time-1;
-          break;
-        }
-        // else{
-        //   temp_time = temp_time-1;
-        //   break;
-        // }
-        // if (temp_time == yExertion.size()){
-        //   // temp_time = temp_time -1;
+         
+        // if ( calculateNorm(tau_meas) > 50.0 && temp_time > yExertion.size()/2.  || repeated_timesteps > 1000){
         //   temp_time = 0;
+        //   repeated_timesteps = 0;
         //   status_.state.replay_behavior.mode = M::kFlight;
         //   break;
         // }
-
-        // if (temp_time >= time_trajectory){
-        //   temp_time = temp_time -1;
-        //   num_of_times += 1;
-        //   status_.state.replay_behavior.mode = M::kDone;
+        // else if(temp_time == yExertion.size()){
+        //   temp_time = temp_time-1;
+        //   repeated_timesteps++;
+        //   std::cout << "repeat  " << repeated_timesteps << std::endl;
         //   break;
         // }
         ControlJoints(std::move(out_joints));
@@ -1441,30 +1481,31 @@ class QuadrupedControl::Impl {
           out_joint.velocity_dps = yd[j] * rad2deg;
           out_joint.kp_scale = 1.5;
           out_joint.kd_scale = 1.5;
-          // std::cout << "Contact Phase : " << contact << std::endl;
-          // std::cout<< "Angle : "<< out_joint.angle_deg << std::endl; 
           out_joints.push_back(out_joint);
           tau_meas.push_back(status_.state.joints[j].torque_Nm);
         }  
         temp_time = temp_time + 1;
-        // if (temp_time == yFlight.size()){
-        //   temp_time = 0;
-        //   status_.state.replay_behavior.mode = M::kLand;
-        //   break;
-        // }
-        // std::cout << "status_.state.joints[1].torque_Nm " << status_.state.joints[1].torque_Nm << std::endl;
-        // std::cout << "status_.state.joints[0].torque_Nm " << status_.state.joints[0].torque_Nm << std::endl;
         std::cout << "norm  " << calculateNorm(tau_meas) << std::endl;
-         
-        if ( calculateNorm(tau_meas) > 10.0 && temp_time > yFlight.size()/2.){
+        
+        if (temp_time == yFlight.size()){
           temp_time = 0;
+          repeated_timesteps = 0;
           status_.state.replay_behavior.mode = M::kLand;
           break;
         }
-        else if(temp_time == yFlight.size()){
-          temp_time = temp_time-1;
-          break;
-        }
+         
+        // if ( calculateNorm(tau_meas) > 10.0 && temp_time > yFlight.size()/2. || repeated_timesteps > 50){
+        //   temp_time = 0;
+        //   repeated_timesteps = 0;
+        //   status_.state.replay_behavior.mode = M::kLand;
+        //   break;
+        // }
+        // else if(temp_time == yFlight.size()){
+        //   temp_time = temp_time-1;
+        //   repeated_timesteps++;
+        //   std::cout << "repeat  " << repeated_timesteps << std::endl;
+        //   break;
+        // }
         ControlJoints(std::move(out_joints));
         break;
       }
@@ -1479,8 +1520,6 @@ class QuadrupedControl::Impl {
           out_joint.velocity_dps = yd[j] * rad2deg;
           out_joint.kp_scale = 2.0;
           out_joint.kd_scale = 2.0;
-          // std::cout << "Contact Phase : " << contact << std::endl;
-          // std::cout<< "Angle : "<< out_joint.angle_deg << std::endl; 
           out_joints.push_back(out_joint);
         }  
         temp_time = temp_time + 1;
@@ -1511,14 +1550,14 @@ class QuadrupedControl::Impl {
             out_joint.power = true;
             // out_joint.angle_deg = naive_lerp(status_.state.joints[j].angle_deg, y[j] * rad2deg, interpolate_time);
             out_joint.angle_deg = y[j] * rad2deg;
-            if(j == 3 || j== 6 || j== 9 || j== 12){
-              out_joint.kp_scale = 5;  // 200*2
-              out_joint.kd_scale = 1.0;  // 6 * 10
+            if(j % 3 == 2){
+              out_joint.kp_scale = config_.replay.kp_abad_init;  // 200*2
+              out_joint.kd_scale = config_.replay.kd_abad_init;  // 6 * 10
             } 
             // shoulder defualt kp = 200, else kp = 50
             else{
-              out_joint.kp_scale = 6;   //50*4 
-              out_joint.kd_scale = 1.0;  // 6*5
+              out_joint.kp_scale = config_.replay.kp_legs_init;   //50*4 
+              out_joint.kd_scale = config_.replay.kd_legs_init;  // 6*5
             }
             // std::cout<< "Angle : "<< out_joint.angle_deg << std::endl; 
             out_joints.push_back(out_joint);
@@ -1559,17 +1598,20 @@ class QuadrupedControl::Impl {
         out_joint.power = true;
         out_joint.angle_deg = naive_lerp(status_.state.joints[j].angle_deg, y[j] * rad2deg, interpolate_time);
         if(j % 3 == 2){
-          out_joint.kp_scale = 5;  // 200*2
-          out_joint.kd_scale = 1.0;  // 6 * 10
+          out_joint.kp_scale = config_.replay.kp_abad_init;  // 200*2
+          out_joint.kd_scale = config_.replay.kd_abad_init;  // 6 * 10
         } 
         // shoulder defualt kp = 200, else kp = 50
         else{
-          out_joint.kp_scale = 6;   //50*4 
-          out_joint.kd_scale = 1.0;  // 6*5
+          out_joint.kp_scale = config_.replay.kp_legs_init;   //50*4 
+          out_joint.kd_scale = config_.replay.kd_legs_init;  // 6*5
         }
 
         if (std::abs(y_vec_initPose[j] * rad2deg - status_.state.joints[j].angle_deg) > 5) {
           all_done = false;
+        }
+        if (interpolate_time >= 1.0){
+          all_done = true;
         }
         // std::cout<< "Angle : "<< out_joint.angle_deg << std::endl; 
         out_joints.push_back(out_joint);
@@ -1578,11 +1620,33 @@ class QuadrupedControl::Impl {
       if (all_done){
         interpolate_time = 0.0; 
         initPosition_reached = true;
+        UpdateCommandedR();
         num_of_times += 1;
         // temp_time = 0;
       }
     }
-    if (temp_time < time_trajectory && !traj_finished && initPosition_reached){
+    else if (temp_time == 0 && initPosition_reached && !traj_finished && status_.state.robot.desired_R.v.norm() < 0.1){
+      for (uint j = 0; j < 12; j++) {
+        QC::Joint out_joint;
+        out_joint.id = j + 1;
+        out_joint.power = true;
+        out_joint.angle_deg = y[j] * rad2deg;
+        if(j % 3 == 2){
+          out_joint.kp_scale = config_.replay.kp_abad_init;  // 200*2
+          out_joint.kd_scale = config_.replay.kd_abad_init;  // 6 * 10
+        } 
+        // shoulder defualt kp = 200, else kp = 50
+        else{
+          out_joint.kp_scale = config_.replay.kp_legs_init;   //50*4 
+          out_joint.kd_scale = config_.replay.kd_legs_init;  // 6*5
+        }
+      out_joints.push_back(out_joint);
+      }
+      UpdateCommandedR();
+
+    
+    }
+    else if (temp_time < time_trajectory && !traj_finished && initPosition_reached){
       
       temp_time = temp_time + 1;
       std::cout<<"time " << temp_time << std::endl;
@@ -1597,18 +1661,25 @@ class QuadrupedControl::Impl {
         // out_joint.kp_scale = 0.0;
         // out_joint.kd_scale = 0.0;
 
-        // shoulder joints
+        // abad joints
         if (j % 3 == 2){
           out_joint.angle_deg = y[j] * rad2deg;
           out_joint.velocity_dps = yd[j] * rad2deg;
-          out_joint.kp_scale = 2.0;
-          out_joint.kd_scale = 2.0;
-        } else {
-          out_joint.torque_Nm += Tau[j] + kp_from_file*(y[j] * rad2deg - status_.state.joints[j].angle_deg) + kd_from_file* (yd[j] * rad2deg - status_.state.joints[j].velocity_dps);
-          out_joint.angle_deg = y[j] * rad2deg;
+          out_joint.kp_scale = kp_map[j];
+          out_joint.kd_scale = kd_map[j];
+        } 
+        else {
+          // out_joint.torque_Nm +=Tau[j] + config_.replay.kp_scale*(y[j] * rad2deg - status_.state.joints[j].angle_deg) + config_.replay.kd_scale* (yd[j] * rad2deg - status_.state.joints[j].velocity_dps);
+          // out_joint.angle_deg = y[j] * rad2deg; 
+          // out_joint.velocity_dps = yd[j] * rad2deg;
+          // out_joint.kp_scale = 0.00;
+          // out_joint.kd_scale = 0.00;
+
+          // out_joint.torque_Nm +=Tau[j];
+          out_joint.angle_deg = y[j] * rad2deg; 
           out_joint.velocity_dps = yd[j] * rad2deg;
-          out_joint.kp_scale = 0.00;
-          out_joint.kd_scale = 0.00;
+          out_joint.kp_scale = kp_map[j];
+          out_joint.kd_scale = kd_map[j];
         }
 
         // PURE TORQUE CONTROL Works But only in simulation
@@ -1677,13 +1748,13 @@ class QuadrupedControl::Impl {
           out_joint.power = true;
           out_joint.angle_deg = naive_lerp(status_.state.joints[j].angle_deg, y[j] * rad2deg, interpolate_time);
           if(j % 3 == 2){
-            out_joint.kp_scale = 5;  // 200*2
-            out_joint.kd_scale = 1.0;  // 6 * 10
+            out_joint.kp_scale = config_.replay.kp_abad_init;  // 200*2
+            out_joint.kd_scale = config_.replay.kd_abad_init;  // 6 * 10
           } 
           // shoulder defualt kp = 200, else kp = 50
           else{
-            out_joint.kp_scale = 6;   //50*4 
-            out_joint.kd_scale = 1.0;  // 6*5
+            out_joint.kp_scale = config_.replay.kp_legs_init;   //50*4 
+            out_joint.kd_scale = config_.replay.kd_legs_init;  // 6*5
           }
           out_joints.push_back(out_joint);
         } 
@@ -2021,10 +2092,6 @@ class QuadrupedControl::Impl {
     }  
     
   }
-  void DoControl_Testbehavior(){
-    DoControl_Walk();
-  }
-
   void DoControl_StandUp() {
     // While we are standing up, the RB transform is always nil.
     status_.state.robot.frame_RB = {};
@@ -3591,22 +3658,19 @@ class QuadrupedControl::Impl {
     }
   }
 
-  // pd gains
-  double kp_from_file = 0.05;
-  double kd_from_file = 0.05;
-
   // For control timing of trajectory
   double time_trajectory;
   float interpolate_time = 0.0; //should lie in 0<t<1
   bool traj_finished = false; 
   bool initPosition_reached = false;
   double temp_time = 0;
-  int req_num_of_times = 4, num_of_times = 0;
+  int repeated_timesteps = 0;
+  int req_num_of_times = 1, num_of_times = 0;
   Eigen::VectorXd y_vec_initPose, y_vec_finalPose;
   std::vector<Eigen::VectorXd> y_vec, yExertion, yFlight, yLand;
   std::vector<Eigen::VectorXd> yd_vec, ydExertion, ydFlight, ydLand;
   std::vector<Eigen::VectorXd> Tau_vec, TauExertion, TauFlight, TauLand;
-  std::vector<int> contactPhases_vec;
+  std::vector<int> contactPhases_vec, contactExertion, contactFlight, contactLand;
   int counter_LiftLeg = 0;
   bool upMovement=false, downMovement = true;
 
@@ -3629,6 +3693,11 @@ class QuadrupedControl::Impl {
   ControlLog* old_control_log_ = &control_logs_[1];
 
   double period_s_ = 0.0;
+  
+  std::map<int, double> kp_map;
+  
+  std::map<int, double> kd_map;
+  
   mjlib::io::RepeatingTimer timer_;
   using Client = mjlib::multiplex::AsioClient;
 

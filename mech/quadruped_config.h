@@ -309,6 +309,51 @@ struct QuadrupedConfig {
 
   Walk walk;
 
+
+  struct Replay {
+    double kp_abad_init = 1;
+    double kd_abad_init = 1;
+    double kp_legs_init = 1;
+    double kd_legs_init = 1;
+
+    double kp_abad = 1;
+    double kd_abad = 1;
+    double kp_hip_front = 1;
+    double kd_hip_front = 1;
+    double kp_knee_front = 1;
+    double kd_knee_front = 1;
+    double kp_hip_back = 1;
+    double kd_hip_back = 1;
+    double kp_knee_back = 1;
+    double kd_knee_back = 1;
+    bool torque_control = false;    
+    bool state_machine = false;
+    bool contact_recognition = false;
+    template <typename Archive>
+    void Serialize(Archive* a) {
+      a->Visit(MJ_NVP(kp_abad_init));
+      a->Visit(MJ_NVP(kd_abad_init));
+      a->Visit(MJ_NVP(kp_legs_init));
+      a->Visit(MJ_NVP(kd_legs_init));
+      a->Visit(MJ_NVP(kp_abad));
+      a->Visit(MJ_NVP(kd_abad));
+      a->Visit(MJ_NVP(kp_hip_front));
+      a->Visit(MJ_NVP(kd_hip_front));
+      a->Visit(MJ_NVP(kp_knee_front));
+      a->Visit(MJ_NVP(kd_knee_front));
+      a->Visit(MJ_NVP(kp_hip_back));
+      a->Visit(MJ_NVP(kd_hip_back));
+      a->Visit(MJ_NVP(kp_knee_back));
+      a->Visit(MJ_NVP(kd_knee_back));
+      
+      a->Visit(MJ_NVP(torque_control));
+      a->Visit(MJ_NVP(state_machine));
+      a->Visit(MJ_NVP(contact_recognition));
+    }
+  };
+
+  Replay replay;
+
   struct Backflip {
     double lower_height = 0.045;
     double pitch_accel_dps2 = 5000.0;
@@ -362,6 +407,7 @@ struct QuadrupedConfig {
     a->Visit(MJ_NVP(jump));
     a->Visit(MJ_NVP(walk));
     a->Visit(MJ_NVP(backflip));
+    a->Visit(MJ_NVP(replay));
   }
 };
 
