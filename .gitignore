@@ -26,3 +26,5 @@ mech_old
 compile_commands.json
 *.log
 analysis/*/*
+*.png
+*.pdf
